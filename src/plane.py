@@ -22,6 +22,7 @@ class Plane:
         self.airport2point = {}
         self.date = datetime.date.today()
         self.margin = datetime.timedelta(minutes=10)
+        self.threshold = 10
 
     
     def __len__(self):
@@ -41,27 +42,7 @@ class Plane:
         return t
 
 
-    def dis_check(self, p1, p2, threshold):
-        """
-        2地点間の距離が閾値以下かどうかを判定
-
-        Args:
-        p1(tuple(int,int)):1つ目の地点の座標
-        p2(tuple(int,int)):2つ目の地点の座標
-        Returns:
-        res(boolean):2地点間の距離が閾値以下かどうか
-        以下ならTrue
-        Note:
-        地点が片方でもNoneならFalseを返す
-        """
-        if p1 is None or p2 is None:
-            res = False
-        else:
-            res = (math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2) <= threshold)
-        return res
-
-
-    def position(self, dep_time, arr_time, judge_datetime, dep_airport, arr_airport):
+    def get_point(self, dep_time, arr_time, judge_datetime, dep_airport, arr_airport):
         """
         飛行機一機の座標を求める。
         線形計算。
@@ -97,11 +78,31 @@ class Plane:
         point = ((arr_datetime - judge_datetime)*dep_point + (judge_datetime - dep_datetime)*arr_point) / (arr_datetime - dep_datetime)
 
         return point
+
+
+    def dis_check(self, p1, p2):
+        """
+        2地点間の距離が閾値以下かどうかを判定
+
+        Args:
+        p1(tuple(int,int)):1つ目の地点の座標
+        p2(tuple(int,int)):2つ目の地点の座標
+        Returns:
+        res(boolean):2地点間の距離が閾値以下かどうか
+        以下ならTrue
+        Note:
+        地点が片方でもNoneならFalseを返す
+        """
+        if p1 is None or p2 is None:
+            res = False
+        else:
+            res = (math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2) <= self.threshold)
+        return res
   
 
     def density(self, judge_datetime, point):
         """
-		csvの全データをposition()で確認していき、中心座標から一定距離内に存在する機体の数を調べる。O(n)でn=200000なので2秒以内に実行可能。
+		csvの全データをget_point()で確認していき、中心座標から一定距離内に存在する機体の数を調べる。O(n)でn=200000なので2秒以内に実行可能。
 			
 		Args:
             judge_datetime(datetime):密度を知りたい時刻
@@ -123,7 +124,7 @@ class Plane:
             dep_airport = self.timetable["Dep Airport Code"].iloc[i]
             arr_airport = self.timetable["Arr Airport Code"].iloc[i]
             
-            if self.dis_check(self.position(dep_time, arr_time, judge_datetime, dep_airport, arr_airport), point, 10):
+            if self.dis_check(self.get_point(dep_time, arr_time, judge_datetime, dep_airport, arr_airport), point):
                 plane_num+=1
 
         return plane_num
