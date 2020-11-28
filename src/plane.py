@@ -24,6 +24,10 @@ class Plane:
         self.margin = datetime.timedelta(minutes=10)
 
     
+    def __len__(self):
+        return len(self.timetable)
+
+    
     def str2date(self, string):
         d, m, y = [int(i) for i in string.split("/")]
         t = datetime.date(y,m,d)
@@ -101,17 +105,16 @@ class Plane:
 
         plane_num = 0
 
-        for row in self.timetable.iterrows():
+        for i in range(len(self)):
             plane_num+=1
-            row=row[1]
-            ef = datetime.datetime.combine(self.str2date(row["Effective From"]), datetime.time(0, 0))
-            et = datetime.datetime.combine(self.str2date(row["Effective To"]), datetime.time(23, 59))
+            ef = datetime.datetime.combine(self.str2date(self.timetable["Effective From"].iloc[i]), datetime.time(0, 0))
+            et = datetime.datetime.combine(self.str2date(self.timetable["Effective To"].iloc[i]), datetime.time(23, 59))
             if judge_datetime < ef or et < judge_datetime:
                 continue
-            dep_time = row["Local Dep Time"]
-            arr_time = row["Local Arr Time"]
-            dep_airport = row["Dep Airport Code"]
-            arr_airport = row["Arr Airport Code"]
+            dep_time = self.timetable["Local Dep Time"].iloc[i]
+            arr_time = self.timetable["Local Arr Time"].iloc[i]
+            dep_airport = self.timetable["Dep Airport Code"].iloc[i]
+            arr_airport = self.timetable["Arr Airport Code"].iloc[i]
             
             if self.dis_check(self.position(dep_time, arr_time, judge_datetime, dep_airport, arr_airport), point, 10):
                 plane_num+=1
