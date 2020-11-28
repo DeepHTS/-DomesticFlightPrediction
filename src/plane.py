@@ -90,6 +90,13 @@ class Plane:
             return None
 
         return None
+
+        dep_point = self.airport2point(dep_airport)
+        arr_point = self.airport2point(arr_airport)
+
+        point = ((arr_datetime - judge_datetime)*dep_point + (judge_datetime - dep_datetime)*arr_point) / (arr_datetime - dep_datetime)
+
+        return point
   
 
     def density(self, judge_datetime, point):
