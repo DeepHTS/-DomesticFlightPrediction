@@ -1,4 +1,5 @@
 from plane import Plane
+import datetime
 
 import time
 
@@ -7,7 +8,8 @@ def main():
 	plane=Plane("data/OAG.csv")
 	mid = time.time()
 	print(mid-start, "seconds")
-	cnt = plane.density(judge_time=0, point=(0,0))
+	judge_datetime = datetime.datetime(2019, 5, 1, 12, 0)
+	cnt = plane.density(judge_datetime, point=(0,0))
 	end = time.time()
 	print(end-mid, "seconds")
 	print(cnt)
