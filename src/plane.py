@@ -12,10 +12,11 @@ class Plane:
         airport2point(dict{code(str),point(tuple(latitude_deg:float, longitude_deg:float))}):空港のコードから座標を取得する辞書
         date(datetime.date):インスタンス生成時の日付。日をまたぐ処理で使用
         margin(int):滑走路など飛行前後で上空にいない時間(minute)
-        threshold(int):密度を求める半径(km)
+        area(int):密度を求める半径(km)
     """
 
-    def __init__(self, data_path, airport_path):
+    def __init__(self, data_path, airport_path, margin=10, area=10):
+        # 飛行データの内必要なカラムのみを保存
         columns = set(
             [
                 "Dep Airport Code",
@@ -31,6 +32,7 @@ class Plane:
         timetable = timetable[timetable["International/Domestic"]=="Domestic"]
         self.timetable = pd.DataFrame({column:timetable[column] for column in columns})
 
+        # IATAコードと座標を紐付ける
         self.airport2point = {}
         airport_data = pd.read_csv(airport_path)
         airport_data = airport_data[airport_data["iso_country"]=="JP"]
@@ -42,8 +44,8 @@ class Plane:
                 self.airport2point[row["iata_code"]] = (row["latitude_deg"], row["longitude_deg"])
 
         self.date = datetime.date.today()
-        self.margin = datetime.timedelta(minutes=10)
-        self.threshold = 10
+        self.margin = datetime.timedelta(minutes=margin)
+        self.area = area
 
     
     def __len__(self):
@@ -117,7 +119,7 @@ class Plane:
         if p1 is None or p2 is None:
             res = False
         else:
-            res = (math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2) <= self.threshold)
+            res = (math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2) <= self.area)
         return res
   
 
@@ -136,11 +138,15 @@ class Plane:
 
         for i in range(len(self)):
             plane_num+=1
-            ef = datetime.datetime.combine(self.str2date(self.timetable["Effective From"].iloc[i]), datetime.time(0, 0))
-            et = datetime.datetime.combine(self.str2date(self.timetable["Effective To"].iloc[i]), datetime.time(23, 59))
+            # 日付情報を処理
+            ef = self.str2date(self.timetable["Effective From"].iloc[i])
+            ef = datetime.datetime.combine(ef, datetime.time(0, 0))
+            et = self.str2date(self.timetable["Effective To"].iloc[i])
+            et = datetime.datetime.combine(et, datetime.time(23, 59))
             if judge_datetime < ef or et < judge_datetime:
                 continue
 
+            # 時刻情報を処理
             dep_time = self.timetable["Local Dep Time"].iloc[i]
             arr_time = self.timetable["Local Arr Time"].iloc[i]
             dep_airport = self.timetable["Dep Airport Code"].iloc[i]
