@@ -2,9 +2,20 @@ import pandas as pd
 import datetime
 import math
 
-class Plane:
 
-    def __init__(self, data_path):
+class Plane:
+    """
+    国内線の密度を測定するためのクラス
+
+    Attributes:
+        timetable(pd.DataFrame):時刻表
+        airport2point(dict{code(str),point(tuple(latitude_deg:float, longitude_deg:float))}):空港のコードから座標を取得する辞書
+        date(datetime.date):インスタンス生成時の日付。日をまたぐ処理で使用
+        margin(int):滑走路など飛行前後で上空にいない時間(minute)
+        threshold(int):密度を求める半径(km)
+    """
+
+    def __init__(self, data_path, airport_path):
         columns = set(
             [
                 "Dep Airport Code",
@@ -19,7 +30,17 @@ class Plane:
         timetable = pd.read_csv(data_path)
         timetable = timetable[timetable["International/Domestic"]=="Domestic"]
         self.timetable = pd.DataFrame({column:timetable[column] for column in columns})
+
         self.airport2point = {}
+        airport_data = pd.read_csv(airport_path)
+        airport_data = airport_data[airport_data["iso_country"]=="JP"]
+        airport_data = airport_data[airport_data["type"] != "heliport"]
+        airport_data = airport_data[airport_data["type"] != "closed"]
+        airport_list = set(timetable["Dep Airport Code"].unique() + timetable["Arr Airport Code"].unique())
+        for _, row in airport_data.iterrows():
+            if row["iata_code"] in airport_list:
+                self.airport2point[row["iata_code"]] = (row["latitude_deg"], row["longitude_deg"])
+
         self.date = datetime.date.today()
         self.margin = datetime.timedelta(minutes=10)
         self.threshold = 10
@@ -119,6 +140,7 @@ class Plane:
             et = datetime.datetime.combine(self.str2date(self.timetable["Effective To"].iloc[i]), datetime.time(23, 59))
             if judge_datetime < ef or et < judge_datetime:
                 continue
+
             dep_time = self.timetable["Local Dep Time"].iloc[i]
             arr_time = self.timetable["Local Arr Time"].iloc[i]
             dep_airport = self.timetable["Dep Airport Code"].iloc[i]

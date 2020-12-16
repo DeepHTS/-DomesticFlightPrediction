@@ -5,7 +5,7 @@ import time
 
 def main():
 	start = time.time()
-	plane=Plane("data/OAG.csv")
+	plane=Plane("data/OAG.csv", "data/airports.csv")
 	mid = time.time()
 	print(mid-start, "seconds")
 	judge_datetime = datetime.datetime(2019, 5, 1, 12, 0)
