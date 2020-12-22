@@ -17,7 +17,7 @@ class Plane:
 
     def __init__(self, data_path, airport_path, margin=10, area=10):
         # 飛行データの内必要なカラムのみを保存
-        columns = set(
+        data_columns = set(
             [
                 "Dep Airport Code",
                 "Arr Airport Code",
@@ -30,15 +30,19 @@ class Plane:
         )
         timetable = pd.read_csv(data_path)
         timetable = timetable[timetable["International/Domestic"]=="Domestic"]
-        self.timetable = pd.DataFrame({column:timetable[column] for column in columns})
+        for column in timetable.columns:
+            if column in data_columns:
+                continue
+            timetable = timetable.drop(column, axis=1)
+        self.timetable = timetable
+
+        # データ内に存在する空港のリスト
+        airport_list = set(timetable["Dep Airport Code"].unique()) or set(timetable["Arr Airport Code"].unique())
 
         # IATAコードと座標を紐付ける
         self.airport2point = {}
         airport_data = pd.read_csv(airport_path)
-        airport_data = airport_data[airport_data["iso_country"]=="JP"]
-        airport_data = airport_data[airport_data["type"] != "heliport"]
-        airport_data = airport_data[airport_data["type"] != "closed"]
-        airport_list = set(timetable["Dep Airport Code"].unique() + timetable["Arr Airport Code"].unique())
+        airport_data = self.airport_drop(airport_data)
         for _, row in airport_data.iterrows():
             if row["iata_code"] in airport_list:
                 self.airport2point[row["iata_code"]] = (row["latitude_deg"], row["longitude_deg"])
@@ -47,11 +51,21 @@ class Plane:
         self.margin = datetime.timedelta(minutes=margin)
         self.area = area
 
-    
+
     def __len__(self):
         return len(self.timetable)
 
-    
+
+    def airport_drop(self, data):
+        data = data[data["iso_country"]=="JP"]
+        data = data[data["type"] != "heliport"]
+        data = data[data["type"] != "closed"]
+        data = data[data["name"] != "Kochi Ryoma Airport"]
+        data = data.dropna(subset = ["iata_code", "latitude_deg", "longitude_deg"])
+
+        return data
+
+
     def str2date(self, string):
         d, m, y = [int(i) for i in string.split("/")]
         t = datetime.date(y,m,d)
@@ -121,7 +135,7 @@ class Plane:
         else:
             res = (math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2) <= self.area)
         return res
-  
+
 
     def density(self, judge_datetime, point):
         """
