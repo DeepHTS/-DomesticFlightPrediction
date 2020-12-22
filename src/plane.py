@@ -79,6 +79,12 @@ class Plane:
         return t
 
 
+    def divide(self,dep_point, arr_point, dep_datetime, arr_datetime, judge_datetime):
+        point = ((arr_datetime - judge_datetime).total_seconds()*dep_point + (judge_datetime - dep_datetime).total_seconds()*arr_point) / (arr_datetime - dep_datetime).total_seconds()
+
+        return point
+
+
     def get_point(self, dep_time, arr_time, judge_datetime, dep_airport, arr_airport):
         """
         飛行機一機の座標を求める。
@@ -107,12 +113,27 @@ class Plane:
         if judge_datetime <= dep_datetime or arr_datetime <= judge_datetime or arr_datetime <= dep_datetime:
             return None
 
-        return None
-
-        dep_point = self.airport2point(dep_airport)
-        arr_point = self.airport2point(arr_airport)
-
-        point = ((arr_datetime - judge_datetime)*dep_point + (judge_datetime - dep_datetime)*arr_point) / (arr_datetime - dep_datetime)
+        dep_point = self.airport2point[dep_airport]
+        arr_point = self.airport2point[arr_airport]
+        try:
+            point = (
+                self.divide(
+                    dep_point[0],
+                    arr_point[0],
+                    dep_datetime,
+                    arr_datetime,
+                    judge_datetime
+                ),
+                self.divide(
+                    dep_point[1],
+                    arr_point[1],
+                    dep_datetime,
+                    arr_datetime,
+                    judge_datetime
+                ),
+            )
+        except:
+            return None
 
         return point
 
