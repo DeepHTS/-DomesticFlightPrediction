@@ -49,6 +49,7 @@ class Plane:
 
         self.date = datetime.date.today()
         self.margin = datetime.timedelta(minutes=margin)
+        self.radius = 6378.1
         self.area = area
 
 
@@ -154,7 +155,10 @@ class Plane:
         if p1 is None or p2 is None:
             res = False
         else:
-            res = (math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2) <= self.area)
+            res = math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
+            res = math.radians(res)
+            res = self.raius*res
+            res = (res <= self.area)
         return res
 
 
@@ -172,7 +176,6 @@ class Plane:
         plane_num = 0
 
         for i in range(len(self)):
-            plane_num+=1
             # 日付情報を処理
             ef = self.str2date(self.timetable["Effective From"].iloc[i])
             ef = datetime.datetime.combine(ef, datetime.time(0, 0))
