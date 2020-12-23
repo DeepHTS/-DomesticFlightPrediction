@@ -56,6 +56,9 @@ class Plane:
 
 
     def airport_drop(self, data):
+        """
+        空港情報から不要な行を落とす
+        """
         data = data[data["iso_country"]=="JP"]
         data = data[data["type"] != "heliport"]
         data = data[data["type"] != "closed"]
@@ -78,7 +81,19 @@ class Plane:
         return t
 
 
-    def divide(self,dep_point, arr_point, dep_datetime, arr_datetime, judge_datetime):
+    def divide(self, dep_point, arr_point, dep_datetime, arr_datetime, judge_datetime):
+        """
+        内分処理
+
+        Args:
+            dep_point(float):出発地点(deg)
+            arr_point(float):到着地点(deg)
+            dep_datetime(datetime):出発時刻
+            arr_datetime(datetime):到着時刻
+            judge_datetime(datetime):位置を知りたい時刻
+        Retruns:
+            point(float):judge_datetimeにおける地点
+        """
         point = ((arr_datetime - judge_datetime).total_seconds()*dep_point + (judge_datetime - dep_datetime).total_seconds()*arr_point) / (arr_datetime - dep_datetime).total_seconds()
 
         return point
@@ -158,8 +173,8 @@ class Plane:
         2地点間の距離を返す
 
         Args:
-        p1(tuple(float,float)):1つ目の地点の座標
-        p2(tuple(float,float)):2つ目の地点の座標
+        p1(tuple(float,float)):1つ目の地点の座標(deg)
+        p2(tuple(float,float)):2つ目の地点の座標(deg)
         Returns:
         dis(float):2地点間の距離(km)
         """
@@ -175,7 +190,7 @@ class Plane:
 			
 		Args:
             judge_datetime(datetime):密度を知りたい時刻
-            point(tuple(latitude:int, longitude:int)):密度を知りたい中心座標
+            point(tuple(latitude_deg:float, longitude_deg:float)):密度を知りたい中心座標
         Returns:
             plane_num(int):中心座標から一定距離内に存在する機体の数
         """
