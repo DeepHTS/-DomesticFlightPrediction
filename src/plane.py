@@ -10,7 +10,6 @@ class Plane:
     Attributes:
         timetable(pd.DataFrame):時刻表
         airport2point(dict{code(str),point(tuple(latitude_deg:float, longitude_deg:float))}):空港のコードから座標を取得する辞書
-        date(datetime.date):インスタンス生成時の日付。日をまたぐ処理で使用
         margin(int):滑走路など飛行前後で上空にいない時間(minute)
         area(int):密度を求める半径(km)
     """
@@ -47,7 +46,6 @@ class Plane:
             if row["iata_code"] in airport_list:
                 self.airport2point[row["iata_code"]] = (row["latitude_deg"], row["longitude_deg"])
 
-        self.date = datetime.date.today()
         self.margin = datetime.timedelta(minutes=margin)
         self.radius = 6378.1
         self.area = area
@@ -73,10 +71,10 @@ class Plane:
         return t
 
 
-    def int2datetime(self, num):
+    def int2time(self, num):
         h = num//100
         m = num%100
-        t = datetime.datetime.combine(self.date, datetime.time(h,m))
+        t = datetime.time(h,m)
         return t
 
 
@@ -100,26 +98,31 @@ class Plane:
             judge_time時に空中にいなければNoneを返す。
         """
         # 運行期間外なら処理しない
-        ef = self.str2date(self.timetable["Effective From"].iloc[idx])
-        et = self.str2date(self.timetable["Effective To"].iloc[idx])
-        ef = datetime.datetime.combine(ef, datetime.time(0, 0))
-        et = datetime.datetime.combine(et, datetime.time(23, 59))
-        if judge_datetime < ef or et < judge_datetime:
+        ef_from = self.str2date(self.timetable["Effective From"].iloc[idx])
+        ef_to = self.str2date(self.timetable["Effective To"].iloc[idx])
+        if judge_datetime.date() < ef_from or ef_to < judge_datetime.date():
             return None
 
         # 時刻情報を処理
         dep_time = self.timetable["Local Dep Time"].iloc[idx]
         arr_time = self.timetable["Local Arr Time"].iloc[idx]
-        dep_datetime = self.int2datetime(dep_time)
-        arr_datetime = self.int2datetime(arr_time)
+        dep_datetime = datetime.datetime.combine(judge_datetime.date(), self.int2time(dep_time))
+        arr_datetime = datetime.datetime.combine(judge_datetime.date(), self.int2time(arr_time))
 
         if dep_datetime > arr_datetime:
             arr_datetime += datetime.timedelta(days=1)
 
+        # フライトの時間によっては全日の情報を用いる
+        if judge_datetime < dep_datetime and judge_datetime.date() - ef_from >= datetime.timedelta(days=1):
+            dep_datetime -= datetime.timedelta(days=1)
+            arr_datetime -= datetime.timedelta(days=1)
+
+        # marginの時間分は空中にいない
         dep_datetime += self.margin
         arr_datetime -= self.margin
 
-        if judge_datetime <= dep_datetime or arr_datetime <= judge_datetime or arr_datetime <= dep_datetime:
+        # 飛行時間が短すぎる場合、求めたい時刻に空中にいない場合を無視
+        if arr_datetime <= judge_datetime or arr_datetime <= dep_datetime:
             return None
 
         dep_airport = self.timetable["Dep Airport Code"].iloc[idx]
@@ -162,7 +165,7 @@ class Plane:
         """
         dis = math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
         dis = math.radians(dis)
-        dis = self.raius*dis
+        dis = self.radius*dis
         return dis
 
 
