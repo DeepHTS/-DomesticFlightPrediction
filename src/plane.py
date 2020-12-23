@@ -8,7 +8,7 @@ class Plane:
     国内線の密度を測定するためのクラス
 
     Attributes:
-        timetable(pd.DataFrame):時刻表
+        timetable(pd.DataFrame):調査対象の時刻表
         airport2point(dict{code(str),point(tuple(latitude_deg:float, longitude_deg:float))}):空港のコードから座標を取得する辞書
         margin(int):滑走路など飛行前後で上空にいない時間(minute)
         area(int):密度を求める半径(km)
@@ -83,7 +83,7 @@ class Plane:
 
     def divide(self, dep_point, arr_point, dep_datetime, arr_datetime, judge_datetime):
         """
-        内分処理
+        内分計算によって座標を求める。
 
         Args:
             dep_point(float):出発地点(deg)
@@ -91,7 +91,7 @@ class Plane:
             dep_datetime(datetime):出発時刻
             arr_datetime(datetime):到着時刻
             judge_datetime(datetime):位置を知りたい時刻
-        Retruns:
+        Returns:
             point(float):judge_datetimeにおける地点
         """
         point = ((arr_datetime - judge_datetime).total_seconds()*dep_point + (judge_datetime - dep_datetime).total_seconds()*arr_point) / (arr_datetime - dep_datetime).total_seconds()
