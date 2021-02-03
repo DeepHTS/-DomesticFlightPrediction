@@ -15,7 +15,7 @@ class Plane:
     """
 
     def __init__(self, data_path, airport_path, margin=10, area=10):
-        # 飛行データの内必要なカラムのみを保存
+        # 必要なカラムのみを保存
         data_columns = set(
             [
                 "Dep Airport Code",
@@ -28,7 +28,7 @@ class Plane:
             ]
         )
         timetable = pd.read_csv(data_path)
-        timetable = timetable[timetable["International/Domestic"]=="Domestic"]
+        timetable = timetable[timetable["International/Domestic"] == "Domestic"]
         for column in timetable.columns:
             if column in data_columns:
                 continue
@@ -36,7 +36,8 @@ class Plane:
         self.timetable = timetable
 
         # データ内に存在する空港のリスト
-        airport_list = set(timetable["Dep Airport Code"].unique()) or set(timetable["Arr Airport Code"].unique())
+        airport_list = set(timetable["Dep Airport Code"].unique()) \
+                    or set(timetable["Arr Airport Code"].unique())
 
         # IATAコードと座標を紐付ける
         self.airport2point = {}
@@ -50,15 +51,14 @@ class Plane:
         self.radius = 6378.1
         self.area = area
 
-
     def __len__(self):
         return len(self.timetable)
-
 
     def airport_drop(self, data):
         """
         空港情報から不要な行を落とす
         """
+
         data = data[data["iso_country"]=="JP"]
         data = data[data["type"] != "heliport"]
         data = data[data["type"] != "closed"]
@@ -67,19 +67,16 @@ class Plane:
 
         return data
 
-
     def str2date(self, string):
         d, m, y = [int(i) for i in string.split("/")]
         t = datetime.date(y,m,d)
         return t
-
 
     def int2time(self, num):
         h = num//100
         m = num%100
         t = datetime.time(h,m)
         return t
-
 
     def divide(self, dep_point, arr_point, dep_datetime, arr_datetime, judge_datetime):
         """
@@ -94,10 +91,12 @@ class Plane:
         Returns:
             point(float):judge_datetimeにおける地点
         """
-        point = ((arr_datetime - judge_datetime).total_seconds()*dep_point + (judge_datetime - dep_datetime).total_seconds()*arr_point) / (arr_datetime - dep_datetime).total_seconds()
+
+        point = ((arr_datetime - judge_datetime).total_seconds() * dep_point \
+                + (judge_datetime - dep_datetime).total_seconds() * arr_point) \
+                / (arr_datetime - dep_datetime).total_seconds()
 
         return point
-
 
     def get_point(self, idx, judge_datetime):
         """
@@ -112,6 +111,7 @@ class Plane:
         Note:
             judge_time時に空中にいなければNoneを返す。
         """
+
         # 運行期間外なら処理しない
         ef_from = self.str2date(self.timetable["Effective From"].iloc[idx])
         ef_to = self.str2date(self.timetable["Effective To"].iloc[idx])
@@ -152,14 +152,14 @@ class Plane:
                     arr_point[0],
                     dep_datetime,
                     arr_datetime,
-                    judge_datetime
+                    judge_datetime,
                 ),
                 self.divide(
                     dep_point[1],
                     arr_point[1],
                     dep_datetime,
                     arr_datetime,
-                    judge_datetime
+                    judge_datetime,
                 ),
             )
         except:
@@ -167,22 +167,21 @@ class Plane:
 
         return point
 
-
     def distance(self, p1, p2):
         """
         2地点間の距離を返す
 
         Args:
-        p1(tuple(float,float)):1つ目の地点の座標(deg)
-        p2(tuple(float,float)):2つ目の地点の座標(deg)
+            p1(tuple(latitude_deg:float, longitude_deg:float)):1つ目の地点の座標(deg)
+            p2(tuple(latitude_deg:float, longitude_deg:float)):2つ目の地点の座標(deg)
         Returns:
-        dis(float):2地点間の距離(km)
+            dis(float):2地点間の距離(km)
         """
         dis = math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
         dis = math.radians(dis)
         dis = self.radius*dis
-        return dis
 
+        return dis
 
     def density(self, judge_datetime, point):
         """
@@ -194,6 +193,7 @@ class Plane:
         Returns:
             plane_num(int):中心座標から一定距離内に存在する機体の数
         """
+
         plane_num = 0
 
         for idx in range(len(self)):
