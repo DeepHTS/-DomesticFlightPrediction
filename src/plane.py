@@ -33,6 +33,8 @@ class Plane:
             if column in data_columns:
                 continue
             timetable = timetable.drop(column, axis=1)
+        timetable["Effective From"] = pd.to_datetime(timetable["Effective From"])
+        timetable["Effective To"] = pd.to_datetime(timetable["Effective To"])
         self.timetable = timetable
 
         # データ内に存在する空港のリスト
@@ -67,10 +69,6 @@ class Plane:
 
         return data
 
-    def str2date(self, string):
-        d, m, y = [int(i) for i in string.split("/")]
-        t = datetime.date(y,m,d)
-        return t
 
     def int2time(self, num):
         h = num//100
@@ -112,10 +110,11 @@ class Plane:
             judge_time時に空中にいなければNoneを返す。
         """
 
+        judge_datetime = pd.to_datetime(judge_datetime)
         # 運行期間外なら処理しない
-        ef_from = self.str2date(self.timetable["Effective From"].iloc[idx])
-        ef_to = self.str2date(self.timetable["Effective To"].iloc[idx])
-        if judge_datetime.date() < ef_from or ef_to < judge_datetime.date():
+        ef_from = self.timetable["Effective From"].iloc[idx]
+        ef_to = self.timetable["Effective To"].iloc[idx]
+        if judge_datetime < ef_from or ef_to < judge_datetime:
             return None
 
         # 時刻情報を処理
@@ -128,7 +127,7 @@ class Plane:
             arr_datetime += datetime.timedelta(days=1)
 
         # フライトの時間によっては全日の情報を用いる
-        if judge_datetime < dep_datetime and judge_datetime.date() - ef_from >= datetime.timedelta(days=1):
+        if judge_datetime < dep_datetime and judge_datetime - ef_from >= pd.to_timedelta("1 days"):
             dep_datetime -= datetime.timedelta(days=1)
             arr_datetime -= datetime.timedelta(days=1)
 
@@ -180,6 +179,13 @@ class Plane:
         dis = math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
         dis = math.radians(dis)
         dis = self.radius*dis
+        # print(dis)
+
+        args = math.radians(p1[1]) - math.radians(p2[1])
+        args = math.sin(math.radians(p1[0])) * math.sin(math.radians(p2[0]))
+        args += math.cos(math.radians(p1[0])) * math.cos(math.radians(p2[0])) * math.cos(args)
+        dis = self.radius * math.acos(args)
+        # print(dis)
 
         return dis
 
