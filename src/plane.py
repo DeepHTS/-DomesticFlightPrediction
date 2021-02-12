@@ -181,6 +181,8 @@ class Plane:
             # dis = math.radians(dis)
             # dis = self.radius*dis
 
+        # 球面上の距離を求めたい
+        # https://qiita.com/port-development/items/eea3a0a225be47db0fd4#:~:text=2%E7%82%B9%E9%96%93%E3%81%AE%E8%B7%9D%E9%9B%A2%E3%81%A8%E3%81%AF%E3%80%812%E7%82%B9%20A,B%20%E3%81%8C%E5%88%86%E3%81%8B%E3%82%8C%E3%81%B0%E3%82%88%E3%81%84%E3%80%82
         lati = (math.radians(p1[0]),math.radians(p2[0]))
         longi = (math.radians(p1[1]), math.radians(p2[1]))
         arg = math.acos(min(math.sin(lati[0]) * math.sin(lati[0]) \
