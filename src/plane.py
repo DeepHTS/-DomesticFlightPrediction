@@ -177,9 +177,16 @@ class Plane:
         Returns:
             dis(float):2地点間の距離(km)
         """
-        dis = math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
-        dis = math.radians(dis)
-        dis = self.radius*dis
+            # dis = math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
+            # dis = math.radians(dis)
+            # dis = self.radius*dis
+
+        lati = (math.radians(p1[0]),math.radians(p2[0]))
+        longi = (math.radians(p1[1]), math.radians(p2[1]))
+        arg = math.acos(min(math.sin(lati[0]) * math.sin(lati[0]) \
+            + math.cos(lati[0]) * math.cos(lati[0]) * math.cos(longi[1] - longi[1]), 1))
+
+        dis = self.radius * arg
 
         return dis
 
